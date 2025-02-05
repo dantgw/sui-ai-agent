@@ -18,12 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Settings, UserCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { truncateAddress } from "@/lib/utils";
 
 export function AccountButton() {
   const router = useRouter();
   const [address, setAddress] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   const handleLogin = async () => {
     // Initialize Sui client
@@ -62,6 +63,35 @@ export function AccountButton() {
     // Redirect to Google login
     window.location.href = authUrl;
   };
+
+  useEffect(() => {
+    // Handle hash parameters since searchParams doesn't work with hash fragments
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash;
+      const hashParams = new URLSearchParams(hash.replace("#", ""));
+      const idToken = hashParams.get("id_token");
+      const error = hashParams.get("error");
+
+      console.log("Hash parameters:", hashParams);
+
+      if (error) {
+        console.error("Authentication error:", error);
+        router.push("/login");
+        return;
+      }
+
+      if (idToken) {
+        const userSalt = "129390038577185583942388216820280642146";
+        const userAddress = jwtToAddress(idToken, userSalt);
+
+        console.log("User Sui Address:", userAddress);
+        localStorage.setItem("id_token", idToken);
+        localStorage.setItem("zkLoginAddress", userAddress);
+
+        router.push("/");
+      }
+    }
+  }, [router]); // Remove searchParams from dependencies since we're not using it
 
   const handleLogout = () => {
     localStorage.removeItem("zkLoginAddress");
