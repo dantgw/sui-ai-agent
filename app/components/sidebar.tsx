@@ -1,20 +1,21 @@
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { PlusCircle, MessageCircle, User } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PlusCircle, MessageCircle, User } from "lucide-react";
+import { AccountButton } from "./account-button";
 
 type Conversation = {
-  id: string
-  title: string
-  messages: { role: "user" | "assistant"; content: string }[]
-}
+  id: string;
+  title: string;
+  messages: { role: "user" | "assistant"; content: string }[];
+};
 
 type SidebarProps = {
-  conversations: Conversation[]
-  onSelectConversation: (id: string) => void
-  selectedConversation: string | null
-  onNewConversation: () => void
-}
+  conversations: Conversation[];
+  onSelectConversation: (id: string) => void;
+  selectedConversation: string | null;
+  onNewConversation: () => void;
+};
 
 export function Sidebar({
   conversations,
@@ -44,25 +45,17 @@ export function Sidebar({
               <div>
                 <div className="font-semibold">{conversation.title}</div>
                 <div className="text-sm text-muted-foreground truncate">
-                  {conversation.messages[conversation.messages.length - 1].content}
+                  {
+                    conversation.messages[conversation.messages.length - 1]
+                      .content
+                  }
                 </div>
               </div>
             </div>
           </button>
         ))}
       </ScrollArea>
-      <div className="p-4 border-t">
-        <Button variant="ghost" className="w-full justify-start">
-          <Avatar className="h-8 w-8 mr-2">
-            <AvatarImage src="/placeholder-avatar.jpg" alt="User" />
-            <AvatarFallback>
-              <User />
-            </AvatarFallback>
-          </Avatar>
-          Account
-        </Button>
-      </div>
+      <AccountButton />
     </div>
-  )
+  );
 }
-
