@@ -7,12 +7,14 @@ type MessageInputProps = {
   input: string;
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>, attachments: File[]) => void;
+  disabled?: boolean;
 };
 
 export function MessageInput({
   input,
   handleInputChange,
   onSubmit,
+  disabled,
 }: MessageInputProps) {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -121,7 +123,12 @@ export function MessageInput({
             <span className="sr-only">Insert emoji</span>
           </Button>
         </div>
-        <Button type="submit" size="icon" className="rounded-full">
+        <Button
+          type="submit"
+          size="icon"
+          className="rounded-full"
+          disabled={disabled}
+        >
           <SendIcon className="h-5 w-5" />
           <span className="sr-only">Send message</span>
         </Button>

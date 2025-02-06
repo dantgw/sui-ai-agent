@@ -32,7 +32,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
 }
 
 function renderMessageContent(content: string) {
-  if (content.startsWith("data:image")) {
+  if (content?.startsWith("data:image")) {
     return (
       <div className="message-image">
         <img
@@ -43,7 +43,7 @@ function renderMessageContent(content: string) {
         />
       </div>
     );
-  } else if (content.startsWith("data:video")) {
+  } else if (content?.startsWith("data:video")) {
     return (
       <video controls className="max-w-full rounded-lg">
         <source src={content} type="video/mp4" />

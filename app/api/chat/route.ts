@@ -1,14 +1,38 @@
-import { openai } from "@ai-sdk/openai"
-import { streamText } from "ai"
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export const runtime = "edge"
 
 export async function POST(req: Request) {
   const { messages } = await req.json()
-  const result = streamText({
-    model: openai("gpt-4-turbo"),
-    messages,
-  })
-  return result.toDataStreamResponse()
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages,
+      temperature: 0.7,
+    });
+
+    return new Response(JSON.stringify({
+      message: completion.choices[0].message
+    }), {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  } catch (error) {
+    console.error('OpenAI API Error:', error);
+    return new Response(JSON.stringify({
+      error: 'An error occurred during the request.'
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  }
 }
 

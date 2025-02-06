@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "ai/react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageInput } from "./message-input";
@@ -24,28 +24,16 @@ export function ChatInterface({
   conversations,
   updateConversation,
 }: ChatInterfaceProps) {
-  const { messages, input, handleInputChange, handleSubmit, setMessages } =
-    useChat();
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string; id: string }>
+  >([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (conversationId) {
-      const conversation = conversations.find((c) => c.id === conversationId);
-      if (conversation) {
-        setMessages(conversation.messages);
-      }
-    }
-  }, [conversationId, conversations, setMessages]);
-
-  useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [scrollAreaRef]); //Corrected dependency
-
-  const onSubmit = async (
+  const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>,
-    attachments: File[]
+    attachments: File[] = []
   ) => {
     e.preventDefault();
     if (!conversationId || (!input.trim() && attachments.length === 0)) return;
@@ -56,19 +44,96 @@ export function ChatInterface({
     if (attachments.length > 0) {
       for (const file of attachments) {
         const fileContent = await readFileAsDataURL(file);
-        updatedMessages.push({ role: "user" as const, content: fileContent });
+        const newMessage = {
+          role: "user" as const,
+          content: fileContent,
+          id: crypto.randomUUID(),
+        };
+        updatedMessages.push(newMessage);
       }
-      // Only update messages and conversation if there are attachments
       setMessages(updatedMessages);
-      updateConversation(conversationId, updatedMessages);
+      updateConversation(
+        conversationId,
+        updatedMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }))
+      );
     }
 
-    // If there's text input, let handleSubmit manage it
+    // Handle text input
     if (input.trim()) {
-      // Don't manually add the text message - let handleSubmit do it
-      handleSubmit(e);
+      setIsLoading(true);
+      const userMessage = {
+        role: "user" as const,
+        content: input.trim(),
+        id: crypto.randomUUID(),
+      };
+
+      updatedMessages = [...updatedMessages, userMessage];
+      setMessages(updatedMessages);
+      setInput("");
+
+      try {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: updatedMessages.map((msg) => ({
+              role: msg.role,
+              content: msg.content,
+            })),
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch response");
+
+        const data = await response.json();
+        const assistantMessage = {
+          role: "assistant" as const,
+          content: data.message.content,
+          id: crypto.randomUUID(),
+        };
+
+        const newMessages = [...updatedMessages, assistantMessage];
+        setMessages(newMessages);
+        updateConversation(
+          conversationId,
+          newMessages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          }))
+        );
+      } catch (error) {
+        console.error("Chat error:", error);
+        // Optionally handle error in UI
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
+
+  useEffect(() => {
+    if (conversationId) {
+      const conversation = conversations.find((c) => c.id === conversationId);
+      if (conversation) {
+        setMessages(
+          conversation.messages.map((msg) => ({
+            ...msg,
+            id: crypto.randomUUID(),
+          }))
+        );
+      }
+    }
+  }, [conversationId, conversations, setMessages]);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    }
+  }, [scrollAreaRef]); //Corrected dependency
 
   return (
     <div className="flex flex-col h-full">
@@ -76,12 +141,16 @@ export function ChatInterface({
         {messages.map((message, index) => (
           <ChatMessage key={index} message={message} />
         ))}
+        {isLoading && (
+          <div className="text-sm text-gray-500">AI is thinking...</div>
+        )}
       </ScrollArea>
       <div className="p-4 border-t">
         <MessageInput
           input={input}
-          handleInputChange={handleInputChange}
-          onSubmit={onSubmit}
+          handleInputChange={(e) => setInput(e.target.value)}
+          onSubmit={handleSubmit}
+          disabled={isLoading}
         />
       </div>
     </div>
