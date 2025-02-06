@@ -1,4 +1,5 @@
-import OpenAI from "openai";
+import { AtomaSDKCore } from "atoma-sdk/core";
+import { chatCreate } from "atoma-sdk/funcs/chatCreate";
 import { Transaction } from "@mysten/sui/transactions";
 
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
@@ -12,8 +13,8 @@ import {
   getZkLoginSignature,
 } from "@mysten/sui/zklogin";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const atomaSDK = new AtomaSDKCore({
+  bearerAuth: process.env.ATOMA_API_KEY ?? "",
 });
 
 export const runtime = "edge";
@@ -176,60 +177,95 @@ const functionDefinitions = [
   },
 ];
 
+async function run() {
+  const res = await chatCreate(atomaSDK, {
+    messages: [
+      {
+        content: "Hello! How can you help me today?",
+        role: "user",
+      },
+    ],
+    model: "meta-llama/Llama-3.3-70B-Instruct",
+  });
+
+  if (!res.ok) {
+    throw res.error;
+  }
+
+  const { value: result } = res;
+
+  // Handle the result
+  console.log(result);
+}
+
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    // const completion = await openai.chat.completions.create({
+    //   model: "gpt-3.5-turbo",
+    //   messages,
+    //   temperature: 0.7,
+    //   functions: functionDefinitions,
+    //   function_call: "auto",
+    // });
+
+    const res = await chatCreate(atomaSDK, {
       messages,
-      temperature: 0.7,
-      functions: functionDefinitions,
-      function_call: "auto",
+      model: "meta-llama/Llama-3.3-70B-Instruct",
     });
 
-    const responseMessage = completion.choices[0].message;
+    if (!res.ok) {
+      throw res.error;
+    }
+
+    const { value: result } = res;
+
+    // Handle the result
+    console.log(result);
+
+    // const responseMessage = completion.choices[0].message;
 
     // Check if the model wants to call a function
-    if (responseMessage.function_call) {
-      const functionName = responseMessage.function_call.name;
-      const functionToCall =
-        availableFunctions[functionName as keyof typeof availableFunctions];
-      const functionArgs = JSON.parse(responseMessage.function_call.arguments);
+    // if (responseMessage.functionCall) {
+    //   const functionName = responseMessage.function_call.name;
+    //   const functionToCall =
+    //     availableFunctions[functionName as keyof typeof availableFunctions];
+    //   const functionArgs = JSON.parse(responseMessage.function_call.arguments);
 
-      // Execute the function
-      const functionResult = await functionToCall(functionArgs.location);
+    //   // Execute the function
+    //   const functionResult = await functionToCall(functionArgs.location);
 
-      // Add function result to messages
-      messages.push(responseMessage);
-      messages.push({
-        role: "function",
-        name: functionName,
-        content: JSON.stringify(functionResult),
-      });
+    //   // Add function result to messages
+    //   messages.push(responseMessage);
+    //   messages.push({
+    //     role: "function",
+    //     name: functionName,
+    //     content: JSON.stringify(functionResult),
+    //   });
 
-      // Get a new response from the model
-      const secondResponse = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages,
-        temperature: 0.7,
-      });
+    //   // Get a new response from the model
+    //   const secondResponse = await openai.chat.completions.create({
+    //     model: "gpt-3.5-turbo",
+    //     messages,
+    //     temperature: 0.7,
+    //   });
 
-      return new Response(
-        JSON.stringify({
-          message: secondResponse.choices[0].message,
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+    //   return new Response(
+    //     JSON.stringify({
+    //       message: secondResponse.choices[0].message,
+    //     }),
+    //     {
+    //       headers: {
+    //         "Content-Type": "application/json",
+    //       },
+    //     }
+    //   );
+    // }
 
     return new Response(
       JSON.stringify({
-        message: responseMessage,
+        message: result.choices[0].message,
       }),
       {
         headers: {

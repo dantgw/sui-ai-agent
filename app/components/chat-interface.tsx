@@ -75,7 +75,7 @@ export function ChatInterface({
       setInput("");
 
       try {
-        const response = await fetch("/api/chat", {
+        const response = await fetch("/api/atoma", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
