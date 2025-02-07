@@ -1,5 +1,6 @@
 import { AtomaSDKCore } from "atoma-sdk/core";
 import { chatCreate } from "atoma-sdk/funcs/chatCreate";
+
 import { Transaction } from "@mysten/sui/transactions";
 
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
@@ -12,6 +13,7 @@ import {
   genAddressSeed,
   getZkLoginSignature,
 } from "@mysten/sui/zklogin";
+import { ATOMA_MODEL } from "@/lib/constants";
 
 const atomaSDK = new AtomaSDKCore({
   bearerAuth: process.env.ATOMA_API_KEY ?? "",
@@ -111,108 +113,88 @@ const availableFunctions = {
   },
 };
 
-// Define function specifications for OpenAI
-const functionDefinitions = [
+// Define tools for the AI model
+const tools = [
   {
-    name: "getCurrentWeather",
-    description: "Get the current weather in a given location",
-    parameters: {
-      type: "object",
-      properties: {
-        location: {
-          type: "string",
-          description: 'The location to get weather for, e.g. "London, UK"',
+    type: "function",
+    function: {
+      name: "getCurrentWeather",
+      description: "Get the current weather in a given location",
+      parameters: {
+        type: "object",
+        properties: {
+          location: {
+            type: "string",
+            description: 'The location to get weather for, e.g. "London, UK"',
+          },
         },
+        required: ["location"],
       },
-      required: ["location"],
     },
   },
-  {
-    name: "sendSuiTokens",
-    description:
-      "Send SUI tokens to a specified address using zkLogin authentication",
-    parameters: {
-      type: "object",
-      properties: {
-        recipientAddress: {
-          type: "string",
-          description: "The Sui wallet address of the recipient",
-        },
-        amount: {
-          type: "string",
-          description: "The amount of SUI tokens to send (in MIST)",
-        },
-        jwt: {
-          type: "string",
-          description: "The JWT token from OAuth provider",
-        },
-        userSalt: {
-          type: "string",
-          description: "The user salt for zkLogin",
-        },
-        zkProof: {
-          type: "object",
-          description: "The partial zkLogin signature from the prover service",
-        },
-        ephemeralPrivateKey: {
-          type: "string",
-          description: "Base64 encoded ephemeral private key",
-        },
-        maxEpoch: {
-          type: "number",
-          description:
-            "The maximum epoch until which the ephemeral key is valid",
-        },
-      },
-      required: [
-        "recipientAddress",
-        "amount",
-        "jwt",
-        "userSalt",
-        "zkProof",
-        "ephemeralPrivateKey",
-        "maxEpoch",
-      ],
-    },
-  },
+  // {
+  //   type: "function",
+  //   function: {
+  //     name: "sendSuiTokens",
+  //     description:
+  //       "Send SUI tokens to a specified address using zkLogin authentication",
+  //     parameters: {
+  //       type: "object",
+  //       properties: {
+  //         recipientAddress: {
+  //           type: "string",
+  //           description: "The Sui wallet address of the recipient",
+  //         },
+  //         amount: {
+  //           type: "string",
+  //           description: "The amount of SUI tokens to send (in MIST)",
+  //         },
+  //         jwt: {
+  //           type: "string",
+  //           description: "The JWT token from OAuth provider",
+  //         },
+  //         userSalt: {
+  //           type: "string",
+  //           description: "The user salt for zkLogin",
+  //         },
+  //         zkProof: {
+  //           type: "object",
+  //           description:
+  //             "The partial zkLogin signature from the prover service",
+  //         },
+  //         ephemeralPrivateKey: {
+  //           type: "string",
+  //           description: "Base64 encoded ephemeral private key",
+  //         },
+  //         maxEpoch: {
+  //           type: "number",
+  //           description:
+  //             "The maximum epoch until which the ephemeral key is valid",
+  //         },
+  //       },
+  //       required: [
+  //         "recipientAddress",
+  //         "amount",
+  //         "jwt",
+  //         "userSalt",
+  //         "zkProof",
+  //         "ephemeralPrivateKey",
+  //         "maxEpoch",
+  //       ],
+  //     },
+  //   },
+  // },
 ];
-
-async function run() {
-  const res = await chatCreate(atomaSDK, {
-    messages: [
-      {
-        content: "Hello! How can you help me today?",
-        role: "user",
-      },
-    ],
-    model: "meta-llama/Llama-3.3-70B-Instruct",
-  });
-
-  if (!res.ok) {
-    throw res.error;
-  }
-
-  const { value: result } = res;
-
-  // Handle the result
-  console.log(result);
-}
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
   try {
-    // const completion = await openai.chat.completions.create({
-    //   model: "gpt-3.5-turbo",
-    //   messages,
-    //   temperature: 0.7,
-    //   functions: functionDefinitions,
-    //   function_call: "auto",
-    // });
-
     const res = await chatCreate(atomaSDK, {
       messages,
-      model: "meta-llama/Llama-3.3-70B-Instruct",
+      model: ATOMA_MODEL.LLAMA,
+      tools,
+      toolChoice: "auto",
     });
 
     if (!res.ok) {
@@ -224,44 +206,48 @@ export async function POST(req: Request) {
     // Handle the result
     console.log(result);
 
-    // const responseMessage = completion.choices[0].message;
-
     // Check if the model wants to call a function
-    // if (responseMessage.functionCall) {
-    //   const functionName = responseMessage.function_call.name;
-    //   const functionToCall =
-    //     availableFunctions[functionName as keyof typeof availableFunctions];
-    //   const functionArgs = JSON.parse(responseMessage.function_call.arguments);
+    if ("tool_calls" in result.choices[0].message) {
+      const toolCall = result.choices[0].message.tool_calls[0];
+      const functionName = toolCall.function.name;
+      const functionToCall =
+        availableFunctions[functionName as keyof typeof availableFunctions];
+      const functionArgs = JSON.parse(toolCall.function.arguments);
 
-    //   // Execute the function
-    //   const functionResult = await functionToCall(functionArgs.location);
+      // Execute the function
+      const functionResult = await functionToCall(functionArgs);
 
-    //   // Add function result to messages
-    //   messages.push(responseMessage);
-    //   messages.push({
-    //     role: "function",
-    //     name: functionName,
-    //     content: JSON.stringify(functionResult),
-    //   });
+      // Add the assistant's response and function result to messages
+      messages.push(result.choices[0].message);
+      messages.push({
+        role: "tool",
+        name: functionName,
+        content: JSON.stringify(functionResult),
+      });
 
-    //   // Get a new response from the model
-    //   const secondResponse = await openai.chat.completions.create({
-    //     model: "gpt-3.5-turbo",
-    //     messages,
-    //     temperature: 0.7,
-    //   });
+      // Get a new response from the model
+      const secondRes = await chatCreate(atomaSDK, {
+        messages,
+        model: ATOMA_MODEL.LLAMA,
+        tools,
+        toolChoice: "auto",
+      });
 
-    //   return new Response(
-    //     JSON.stringify({
-    //       message: secondResponse.choices[0].message,
-    //     }),
-    //     {
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //     }
-    //   );
-    // }
+      if (!secondRes.ok) {
+        throw secondRes.error;
+      }
+
+      return new Response(
+        JSON.stringify({
+          message: secondRes.value.choices[0].message,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
 
     return new Response(
       JSON.stringify({
@@ -274,7 +260,7 @@ export async function POST(req: Request) {
       }
     );
   } catch (error) {
-    console.error("OpenAI API Error:", error);
+    console.error("API Error:", error);
     return new Response(
       JSON.stringify({
         error: "An error occurred during the request.",
