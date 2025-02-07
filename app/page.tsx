@@ -72,6 +72,15 @@ export default function Home() {
     setSelectedConversation(newConversation.id);
   };
 
+  const deleteConversation = (id: string) => {
+    const updatedConversations = conversations.filter((conv) => conv.id !== id);
+    setConversations(updatedConversations);
+    localStorage.setItem("conversations", JSON.stringify(updatedConversations));
+    if (selectedConversation === id) {
+      setSelectedConversation(null);
+    }
+  };
+
   return (
     <div className="flex h-screen w-full bg-background">
       <Sidebar
@@ -79,6 +88,7 @@ export default function Home() {
         onSelectConversation={setSelectedConversation}
         selectedConversation={selectedConversation}
         onNewConversation={addNewConversation}
+        onDeleteConversation={deleteConversation}
       />
       <main className="flex-1 overflow-hidden">
         <ChatInterface
