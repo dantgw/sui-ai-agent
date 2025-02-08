@@ -22,156 +22,70 @@ export const runtime = "edge";
 const availableFunctions = {
   getCurrentWeather: async (location: string) => {
     // Mock weather function - replace with actual weather API call
-    return { temperature: 20, unit: "celsius", location };
+    return {
+      temperature: 20,
+      unit: "celsius",
+      location,
+      executeOnFrontend: false,
+    };
   },
   sendSuiTokens: async ({
     recipientAddress,
     amount,
-    jwt,
-    userSalt,
-    zkProof,
-    ephemeralPrivateKey,
-    maxEpoch,
   }: {
     recipientAddress: string;
     amount: string;
-    jwt: string;
-    userSalt: string;
-    zkProof: any; // Partial zkLogin signature from prover
-    ephemeralPrivateKey: string;
-    maxEpoch: number;
   }) => {
-    try {
-      // Initialize Sui client
-      const client = new SuiClient({
-        url: process.env.SUI_RPC_URL || "https://fullnode.devnet.sui.io",
-      });
-
-      // Reconstruct the ephemeral keypair
-      const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(
-        Buffer.from(ephemeralPrivateKey, "base64")
-      );
-
-      // Create transaction block
-      const tx = new Transaction();
-
-      // create a new coin with balance 100, based on the coins used as gas payment
-      // you can define any balance here
-      const [coin] = tx.splitCoins(tx.gas, [amount]);
-
-      // transfer the split coin to a specific address
-      tx.transferObjects([coin], recipientAddress);
-
-      // Decode JWT to get sub and aud
-      const decodedJwt = JSON.parse(
-        Buffer.from(jwt.split(".")[1], "base64").toString()
-      );
-
-      // Generate address seed
-      const addressSeed = genAddressSeed(
-        BigInt(userSalt),
-        "sub",
-        decodedJwt.sub,
-        decodedJwt.aud
-      ).toString();
-
-      // Sign transaction with ephemeral key
-      const { bytes, signature: userSignature } = await tx.sign({
-        client,
-        signer: ephemeralKeyPair,
-      });
-
-      // Generate complete zkLogin signature
-      const zkLoginSignature = getZkLoginSignature({
-        inputs: {
-          ...zkProof,
-          addressSeed,
-        },
-        maxEpoch,
-        userSignature,
-      });
-
-      // Execute transaction
-      const response = await client.executeTransactionBlock({
-        transactionBlock: bytes,
-        signature: zkLoginSignature,
-      });
-
-      return {
-        status: "success",
-        txHash: response.digest,
+    return {
+      executeOnFrontend: true,
+      functionName: "sendSuiTokens",
+      args: {
         amount,
-        recipient: recipientAddress,
-      };
-    } catch (error) {
-      console.error("Sui Transaction Error:", error);
-      throw new Error("Failed to send Sui tokens: " + (error as Error).message);
-    }
+        recipientAddress,
+      },
+    };
   },
 };
 
 // Define function specifications for OpenAI
-const functionDefinitions = [
+const tools = [
   {
-    name: "getCurrentWeather",
-    description: "Get the current weather in a given location",
-    parameters: {
-      type: "object",
-      properties: {
-        location: {
-          type: "string",
-          description: 'The location to get weather for, e.g. "London, UK"',
+    type: "function" as const,
+    function: {
+      name: "getCurrentWeather",
+      description: "Get the current weather in a given location",
+      parameters: {
+        type: "object",
+        properties: {
+          location: {
+            type: "string",
+            description: 'The location to get weather for, e.g. "London, UK"',
+          },
         },
+        required: ["location"],
       },
-      required: ["location"],
     },
   },
   {
-    name: "sendSuiTokens",
-    description:
-      "Send SUI tokens to a specified address using zkLogin authentication",
-    parameters: {
-      type: "object",
-      properties: {
-        recipientAddress: {
-          type: "string",
-          description: "The Sui wallet address of the recipient",
+    type: "function" as const,
+    function: {
+      name: "sendSuiTokens",
+      description:
+        "Send SUI tokens to a specified address using zkLogin authentication",
+      parameters: {
+        type: "object",
+        properties: {
+          recipientAddress: {
+            type: "string",
+            description: "The Sui wallet address of the recipient",
+          },
+          amount: {
+            type: "string",
+            description: "The amount of SUI tokens to send (in MIST)",
+          },
         },
-        amount: {
-          type: "string",
-          description: "The amount of SUI tokens to send (in MIST)",
-        },
-        jwt: {
-          type: "string",
-          description: "The JWT token from OAuth provider",
-        },
-        userSalt: {
-          type: "string",
-          description: "The user salt for zkLogin",
-        },
-        zkProof: {
-          type: "object",
-          description: "The partial zkLogin signature from the prover service",
-        },
-        ephemeralPrivateKey: {
-          type: "string",
-          description: "Base64 encoded ephemeral private key",
-        },
-        maxEpoch: {
-          type: "number",
-          description:
-            "The maximum epoch until which the ephemeral key is valid",
-        },
+        required: ["recipientAddress", "amount"],
       },
-      required: [
-        "recipientAddress",
-        "amount",
-        "jwt",
-        "userSalt",
-        "zkProof",
-        "ephemeralPrivateKey",
-        "maxEpoch",
-      ],
     },
   },
 ];
@@ -184,22 +98,26 @@ export async function POST(req: Request) {
       model: "gpt-3.5-turbo",
       messages,
       temperature: 0.7,
-      functions: functionDefinitions,
-      function_call: "auto",
+      // functions: functionDefinitions,
+      // function_call: "auto",
+      // tools: tools,
+      // tool_choice: "auto",
     });
 
     const responseMessage = completion.choices[0].message;
 
     // Check if the model wants to call a function
-    if (responseMessage.function_call) {
-      const functionName = responseMessage.function_call.name;
+    if (responseMessage.tool_calls) {
+      const functionName = responseMessage.tool_calls[0].function.name;
       const functionToCall =
         availableFunctions[functionName as keyof typeof availableFunctions];
-      const functionArgs = JSON.parse(responseMessage.function_call.arguments);
+      const functionArgs = JSON.parse(
+        responseMessage.tool_calls[0].function.arguments
+      );
 
       // Execute the function
-      const functionResult = await functionToCall(functionArgs.location);
-
+      const functionResult = await functionToCall(functionArgs);
+      console.log("functionResult", functionResult);
       // Add function result to messages
       messages.push(responseMessage);
       messages.push({
@@ -208,23 +126,13 @@ export async function POST(req: Request) {
         content: JSON.stringify(functionResult),
       });
 
-      // Get a new response from the model
-      const secondResponse = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        messages,
-        temperature: 0.7,
+      const returnData = new Response(JSON.stringify({ ...functionResult }), {
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-
-      return new Response(
-        JSON.stringify({
-          message: secondResponse.choices[0].message,
-        }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      console.log(returnData);
+      return returnData;
     }
 
     return new Response(

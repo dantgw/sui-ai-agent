@@ -45,13 +45,17 @@ export function AccountButton() {
     );
 
     // Store ephemeral key pair in session storage
-    // sessionStorage.setItem(
-    //   "ephemeralKeyPair",
-    //   JSON.stringify({
-    //     publicKey: Array.from(ephemeralKeyPair.getPublicKey()),
-    //     privateKey: Array.from(ephemeralKeyPair.export().privateKey),
-    //   })
-    // );
+    sessionStorage.setItem(
+      "zkLoginData",
+      // JSON.stringify({
+      //   publicKey: Array.from(ephemeralKeyPair.getPublicKey().toRawBytes()),
+      // })
+      JSON.stringify({
+        ephemeralPrivateKey: ephemeralKeyPair.getSecretKey(),
+        maxEpoch,
+        randomness,
+      })
+    );
 
     // Construct Google OAuth URL
     const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
@@ -87,7 +91,7 @@ export function AccountButton() {
         console.log("User Sui Address:", userAddress);
         localStorage.setItem("id_token", idToken);
         localStorage.setItem("zkLoginAddress", userAddress);
-
+        localStorage.setItem("userSalt", userSalt);
         router.push("/");
       }
     }
@@ -95,6 +99,9 @@ export function AccountButton() {
 
   const handleLogout = () => {
     localStorage.removeItem("zkLoginAddress");
+    localStorage.removeItem("id_token");
+    localStorage.removeItem("zkLoginData");
+    localStorage.removeItem("userSalt");
     setAddress(null);
   };
 
