@@ -6,7 +6,6 @@ import { AccountButton } from "./account-button";
 
 type Conversation = {
   id: string;
-  title: string;
   messages: { role: "user" | "assistant"; content: string }[];
 };
 
@@ -45,7 +44,6 @@ export function Sidebar({
             <div className="flex items-center space-x-2 w-full">
               <MessageCircle className="h-4 w-4 shrink-0" />
               <div className="flex-1 min-w-0 mr-2 w-4">
-                <div className="font-semibold">{conversation.title}</div>
                 <div className="text-sm text-muted-foreground truncate">
                   {
                     conversation.messages[conversation.messages.length - 1]

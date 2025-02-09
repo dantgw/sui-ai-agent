@@ -17,7 +17,6 @@ import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 
 type Conversation = {
   id: string;
-  title: string;
   messages: { role: "user" | "assistant"; content: string }[];
 };
 

@@ -6,7 +6,6 @@ import { ChatInterface } from "./components/chat-interface";
 
 type Conversation = {
   id: string;
-  title: string;
   messages: { role: "user" | "assistant"; content: string }[];
 };
 
@@ -25,14 +24,12 @@ export default function Home() {
       const initialConversations: Conversation[] = [
         {
           id: "1",
-          title: "Chat 1",
           messages: [
             { role: "assistant", content: "Hello! How can I help you today?" },
           ],
         },
         {
           id: "2",
-          title: "Chat 2",
           messages: [
             {
               role: "assistant",
@@ -63,7 +60,6 @@ export default function Home() {
   const addNewConversation = () => {
     const newConversation: Conversation = {
       id: Date.now().toString(),
-      title: `New Chat`,
       messages: [{ role: "assistant", content: "How can I assist you today?" }],
     };
     const updatedConversations = [...conversations, newConversation];
