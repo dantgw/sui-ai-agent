@@ -1,13 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
-import { Upload, Info } from "lucide-react";
+import { Upload, Info, Copy, Loader2 } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   role: "user" | "assistant";
@@ -19,9 +20,17 @@ interface Message {
 export function ChatMessage({ message }: { message: Message }) {
   const isUser = message.role === "user";
   const [blobId, setBlobId] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
   const uploadToWalrus = async (imageData: string) => {
+    setIsUploading(true);
     try {
+      toast({
+        title: "Uploading image to Walrus...",
+        description: "Please wait while we process your request.",
+      });
+
       const PUBLISHER = "https://publisher.walrus-testnet.walrus.space";
 
       // Convert base64 to blob if it's a data URL
@@ -47,12 +56,36 @@ export function ChatMessage({ message }: { message: Message }) {
 
       if (newBlobId) {
         setBlobId(newBlobId);
+        toast({
+          title: "Upload successful!",
+          description: (
+            <div className="flex items-center gap-2">
+              <span>Blob ID:</span>
+              <code
+                className="px-2 py-1 bg-muted rounded-md cursor-pointer flex items-center gap-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(newBlobId);
+                  toast({
+                    title: "Copied to clipboard",
+                    description: "Blob ID has been copied to your clipboard",
+                  });
+                }}
+              >
+                {newBlobId}
+                <Copy className="h-4 w-4" />
+              </code>
+            </div>
+          ),
+          duration: 5000,
+        });
       } else {
         throw new Error("Invalid response format from Walrus");
       }
     } catch (error) {
       console.error("Error uploading to Walrus:", error);
       setBlobId(null);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -84,11 +117,16 @@ export function ChatMessage({ message }: { message: Message }) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => !blobId && uploadToWalrus(message.content)}
+                    onClick={() =>
+                      !blobId && !isUploading && uploadToWalrus(message.content)
+                    }
                     className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={isUploading}
                   >
                     {blobId ? (
                       <Info className="h-4 w-4" />
+                    ) : isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Upload className="h-4 w-4" />
                     )}
