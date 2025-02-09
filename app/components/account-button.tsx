@@ -17,14 +17,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, UserCircle } from "lucide-react";
+import { LogOut, Settings, UserCircle, Copy } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { truncateAddress } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export function AccountButton() {
   const router = useRouter();
   const [address, setAddress] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   const handleLogin = async () => {
     // Initialize Sui client
@@ -109,6 +111,15 @@ export function AccountButton() {
     router.push("/profile");
   };
 
+  const handleCopyAddress = () => {
+    if (address) {
+      navigator.clipboard.writeText(address);
+      toast({
+        description: "Address copied to clipboard",
+      });
+    }
+  };
+
   useEffect(() => {
     // Check if user is logged in by looking for address in local storage
     const savedAddress = localStorage.getItem("zkLoginAddress");
@@ -134,6 +145,10 @@ export function AccountButton() {
               <DropdownMenuItem onClick={handleProfileClick}>
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleCopyAddress}>
+                <Copy className="mr-2 h-4 w-4" />
+                <span>Copy Address</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />

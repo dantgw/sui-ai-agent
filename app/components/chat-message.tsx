@@ -28,7 +28,12 @@ export function ChatMessage({ message }: { message: Message }) {
       const response = await fetch(imageData);
       const blob = await response.blob();
 
-      const walrusResponse = await fetch(`${PUBLISHER}/v1/blobs`, {
+      const address = sessionStorage.getItem("zkLoginAddress");
+      let walrusUrl = `${PUBLISHER}/v1/blobs`;
+      if (address) {
+        walrusUrl = `${PUBLISHER}/v1/blobs?send_object_to=${address}`;
+      }
+      const walrusResponse = await fetch(walrusUrl, {
         method: "PUT",
         body: blob,
       });
