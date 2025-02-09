@@ -1,6 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
+import { Upload, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Message {
   role: "user" | "assistant";
@@ -57,33 +64,43 @@ export function ChatMessage({ message }: { message: Message }) {
         </Avatar>
       )}
       <Card
-        className={`p-4 max-w-[70%] ${
+        className={`max-w-[70%] ${
           isUser ? "bg-primary text-primary-foreground" : ""
         }`}
       >
         {message.isImage ? (
-          <div className="space-y-2">
+          <div className="space-y-2 relative group">
             <img
               src={message.content}
               alt="AI generated image"
               className="max-w-full h-auto rounded-lg"
             />
-            <button
-              onClick={() => uploadToWalrus(message.content)}
-              className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 w-12"
-            >
-              Upload to Walrus
-            </button>
-            {blobId && (
-              <div className="text-sm mt-2 p-2 bg-muted rounded">
-                <p>
-                  <span className="font-semibold">Blob ID:</span> {blobId}
-                </p>
-              </div>
-            )}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => !blobId && uploadToWalrus(message.content)}
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {blobId ? (
+                      <Info className="h-4 w-4" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {blobId ? (
+                    <p>Blob ID: {blobId}</p>
+                  ) : (
+                    <p>Upload image to Walrus</p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         ) : (
-          <div className="mt-1">{message.content}</div>
+          <div className="mt-1 p-4">{message.content}</div>
         )}
       </Card>
     </div>
