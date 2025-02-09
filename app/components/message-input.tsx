@@ -84,9 +84,9 @@ export function MessageInput({
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="flex items-end space-x-2"
+        className="flex flex-row items-center space-x-2"
       >
-        <Button
+        {/* <Button
           type="button"
           variant="ghost"
           size="icon"
@@ -95,7 +95,7 @@ export function MessageInput({
         >
           <PaperclipIcon className="h-5 w-5" />
           <span className="sr-only">Attach file</span>
-        </Button>
+        </Button> */}
         <input
           type="file"
           ref={fileInputRef}
@@ -113,7 +113,7 @@ export function MessageInput({
             className="min-h-[50px] pr-10 py-3 resize-none"
             rows={1}
           />
-          <Button
+          {/* <Button
             type="button"
             variant="ghost"
             size="icon"
@@ -121,7 +121,7 @@ export function MessageInput({
           >
             <SmileIcon className="h-5 w-5" />
             <span className="sr-only">Insert emoji</span>
-          </Button>
+          </Button> */}
         </div>
         <Button
           type="submit"
