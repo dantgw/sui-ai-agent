@@ -1,11 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 
-type ChatMessageProps = {
-  message: { role: "user" | "assistant"; content: string };
-};
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  id: string;
+  isImage?: boolean;
+}
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message }: { message: Message }) {
   const isUser = message.role === "user";
 
   return (
@@ -25,7 +28,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
           isUser ? "bg-primary text-primary-foreground" : ""
         }`}
       >
-        {renderMessageContent(message.content)}
+        {message.isImage ? (
+          <img
+            src={message.content}
+            alt="AI generated image"
+            className="max-w-full h-auto rounded-lg mt-2"
+          />
+        ) : (
+          <div className="mt-1">{message.content}</div>
+        )}
       </Card>
     </div>
   );

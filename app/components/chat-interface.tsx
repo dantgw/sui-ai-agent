@@ -37,7 +37,12 @@ export function ChatInterface({
   setSelectedConversation,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<
-    Array<{ role: "user" | "assistant"; content: string; id: string }>
+    Array<{
+      role: "user" | "assistant";
+      content: string;
+      id: string;
+      isImage?: boolean;
+    }>
   >([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -236,7 +241,8 @@ export function ChatInterface({
       setInput("");
 
       try {
-        const response = await fetch("/api/chat", {
+        // Change API endpoint to image generation
+        const response = await fetch("/api/openai-image", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -250,49 +256,13 @@ export function ChatInterface({
         });
 
         if (!response.ok) throw new Error("Failed to fetch response");
-        console.log("response", response);
         const data = await response.json();
-
-        // Handle function calls on the frontend
-        if (data.executeOnFrontend && data.functionName === "sendSuiTokens") {
-          const functionArgs = JSON.parse(data.args);
-          const result = await handleSuiTransaction(functionArgs);
-
-          // Add function result to messages
-          const functionResultMessage = {
-            role: "function" as const,
-            content: JSON.stringify(result),
-            id: crypto.randomUUID(),
-          };
-
-          updatedMessages = [
-            ...updatedMessages,
-            data.message,
-            functionResultMessage,
-          ];
-
-          // Get final response from API
-          const finalResponse = await fetch("/api/chat", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messages: updatedMessages.map((msg) => ({
-                role: msg.role,
-                content: msg.content,
-              })),
-            }),
-          });
-
-          const finalData = await finalResponse.json();
-          data.message = finalData.message;
-        }
 
         const assistantMessage = {
           role: "assistant" as const,
-          content: data.message.content,
+          content: data.message.content, // This will now be the image URL
           id: crypto.randomUUID(),
+          isImage: true, // Add this flag to identify image messages
         };
 
         const newMessages = [...updatedMessages, assistantMessage];
@@ -302,11 +272,11 @@ export function ChatInterface({
           newMessages.map((msg) => ({
             role: msg.role,
             content: msg.content,
+            isImage: msg.isImage,
           }))
         );
       } catch (error) {
         console.error("Chat error:", error);
-        // Optionally handle error in UI
       } finally {
         setIsLoading(false);
       }

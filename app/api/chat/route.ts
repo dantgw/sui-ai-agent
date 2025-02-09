@@ -131,7 +131,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
       });
-      console.log(returnData);
+      // console.log(returnData);
       return returnData;
     }
 
