@@ -50,9 +50,19 @@ export default function Home() {
     id: string,
     messages: { role: "user" | "assistant"; content: string }[]
   ) => {
-    const updatedConversations = conversations.map((conv) =>
-      conv.id === id ? { ...conv, messages } : conv
-    );
+    const existingConversation = conversations.find((conv) => conv.id === id);
+    let updatedConversations;
+
+    if (existingConversation) {
+      // Update existing conversation
+      updatedConversations = conversations.map((conv) =>
+        conv.id === id ? { ...conv, messages } : conv
+      );
+    } else {
+      // Add new conversation
+      updatedConversations = [...conversations, { id, messages }];
+    }
+
     setConversations(updatedConversations);
     localStorage.setItem("conversations", JSON.stringify(updatedConversations));
   };
@@ -91,6 +101,7 @@ export default function Home() {
           conversationId={selectedConversation}
           conversations={conversations}
           updateConversation={updateConversation}
+          setSelectedConversation={setSelectedConversation}
         />
       </main>
     </div>

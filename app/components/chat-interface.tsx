@@ -27,12 +27,14 @@ type ChatInterfaceProps = {
     id: string,
     messages: { role: "user" | "assistant"; content: string }[]
   ) => void;
+  setSelectedConversation: (id: string) => void;
 };
 
 export function ChatInterface({
   conversationId,
   conversations,
   updateConversation,
+  setSelectedConversation,
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<
     Array<{ role: "user" | "assistant"; content: string; id: string }>
@@ -150,8 +152,54 @@ export function ChatInterface({
     attachments: File[] = []
   ) => {
     e.preventDefault();
-    if (!conversationId || (!input.trim() && attachments.length === 0)) return;
 
+    if (!input.trim() && attachments.length === 0) return;
+
+    if (!conversationId) {
+      // Create new conversation with the user's message
+      const newConversationId = Date.now().toString();
+      const userMessage = {
+        role: "user" as const,
+        content: input.trim(),
+        id: crypto.randomUUID(),
+      };
+
+      // Initialize new conversation with the user's message
+      const newMessages = [userMessage];
+
+      // Add the new conversation to localStorage
+      const updatedConversations = [
+        ...conversations,
+        {
+          id: newConversationId,
+          messages: newMessages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          })),
+        },
+      ];
+      localStorage.setItem(
+        "conversations",
+        JSON.stringify(updatedConversations)
+      );
+
+      // Update the conversation
+      updateConversation(
+        newConversationId,
+        newMessages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }))
+      );
+      setSelectedConversation(newConversationId);
+
+      // Continue with the normal message flow using the new conversation ID
+      conversationId = newConversationId;
+      setMessages(newMessages);
+      setInput("");
+    }
+
+    setIsLoading(true);
     let updatedMessages = [...messages];
 
     // Handle file attachments if any
@@ -177,7 +225,6 @@ export function ChatInterface({
 
     // Handle text input
     if (input.trim()) {
-      setIsLoading(true);
       const userMessage = {
         role: "user" as const,
         content: input.trim(),
