@@ -296,6 +296,20 @@ export function ChatInterface({
     }
   };
 
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     if (conversationId) {
       const conversation = conversations.find((c) => c.id === conversationId);
@@ -306,15 +320,14 @@ export function ChatInterface({
             id: crypto.randomUUID(),
           }))
         );
+        setTimeout(scrollToBottom, 100);
       }
     }
-  }, [conversationId, conversations, setMessages]);
+  }, [conversationId, conversations]);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [scrollAreaRef]); //Corrected dependency
+    setTimeout(scrollToBottom, 100);
+  }, [messages]);
 
   return (
     <div className="flex flex-col h-full">
