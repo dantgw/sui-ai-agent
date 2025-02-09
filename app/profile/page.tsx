@@ -4,11 +4,13 @@ import { useState, useEffect } from "react";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
 import { ArrowLeft, Copy, Check } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
   const [address, setAddress] = useState<string>("");
   const [balance, setBalance] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const getBalance = async (address: string) => {
     try {
@@ -31,14 +33,26 @@ export default function Profile() {
       setBalance(formattedBalance);
     } catch (error) {
       console.error("Error connecting to Sui wallet:", error);
+      toast({
+        description: "Failed to fetch balance",
+      });
     }
   };
 
   const copyAddress = async () => {
     if (!address) return;
-    await navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      toast({
+        description: "Address copied to clipboard",
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        description: "Failed to copy address",
+      });
+    }
   };
 
   useEffect(() => {
@@ -52,12 +66,12 @@ export default function Profile() {
   }, [localStorage]);
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen bg-background p-8 w-full flex flex-row align-middle ">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-center mb-8 relative">
           <button
             onClick={() => (window.location.href = "/")}
-            className="absolute left-0 rounded-full size-12 bg-gray-200 hover:bg-gray-300 transition-colors flex items-center justify-center"
+            className="absolute left-0 rounded-full size-12  hover:bg-gray-100 transition-colors flex items-center justify-center"
           >
             <ArrowLeft size={20} />
           </button>
