@@ -1,143 +1,86 @@
 import OpenAI from "openai";
-import { Transaction } from "@mysten/sui/transactions";
-
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-
-import { SuiClient } from "@mysten/sui/client";
-import {
-  generateNonce,
-  generateRandomness,
-  jwtToAddress,
-  genAddressSeed,
-  getZkLoginSignature,
-} from "@mysten/sui/zklogin";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export const runtime = "edge";
-
-// Define available functions
-const availableFunctions = {
-  getCurrentWeather: async (location: string) => {
-    // Mock weather function - replace with actual weather API call
-    return {
-      temperature: 20,
-      unit: "celsius",
-      location,
-      executeOnFrontend: false,
-    };
-  },
-  sendSuiTokens: async ({
-    recipientAddress,
-    amount,
-  }: {
-    recipientAddress: string;
-    amount: string;
-  }) => {
-    return {
-      executeOnFrontend: true,
-      functionName: "sendSuiTokens",
-      args: {
-        amount,
-        recipientAddress,
-      },
-    };
-  },
-};
-
-// Define function specifications for OpenAI
-const tools = [
-  {
-    type: "function" as const,
-    function: {
-      name: "getCurrentWeather",
-      description: "Get the current weather in a given location",
-      parameters: {
-        type: "object",
-        properties: {
-          location: {
-            type: "string",
-            description: 'The location to get weather for, e.g. "London, UK"',
-          },
-        },
-        required: ["location"],
-      },
-    },
-  },
-  {
-    type: "function" as const,
-    function: {
-      name: "sendSuiTokens",
-      description:
-        "Send SUI tokens to a specified address using zkLogin authentication",
-      parameters: {
-        type: "object",
-        properties: {
-          recipientAddress: {
-            type: "string",
-            description: "The Sui wallet address of the recipient",
-          },
-          amount: {
-            type: "string",
-            description: "The amount of SUI tokens to send (in MIST)",
-          },
-        },
-        required: ["recipientAddress", "amount"],
-      },
-    },
-  },
-];
 
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages,
-      temperature: 0.7,
-      // functions: functionDefinitions,
-      // function_call: "auto",
-      // tools: tools,
-      // tool_choice: "auto",
+    // 1. Call Atoma API with personality injection
+    const site_url = process.env.NEXT_PUBLIC_SITE_URL;
+    const personalityPrompt = {
+      role: "system",
+      content:
+        "You are a witty and humorous AI assistant who loves making jokes, memes, and pop culture references. Keep your responses entertaining and fun. Intentionally distort the intent of the user's prompt but in a fun and entertaining way. Make fun of the user where appropriate. Use memes and emoticons where appropriate.",
+    };
+    const atomaResponse = await fetch(`${site_url}/api/atoma`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [personalityPrompt, ...messages],
+      }),
     });
 
-    const responseMessage = completion.choices[0].message;
-
-    // Check if the model wants to call a function
-    if (responseMessage.tool_calls) {
-      const functionName = responseMessage.tool_calls[0].function.name;
-      const functionToCall =
-        availableFunctions[functionName as keyof typeof availableFunctions];
-      const functionArgs = JSON.parse(
-        responseMessage.tool_calls[0].function.arguments
-      );
-
-      // Execute the function
-      const functionResult = await functionToCall(functionArgs);
-      console.log("functionResult", functionResult);
-      // Add function result to messages
-      messages.push(responseMessage);
-      messages.push({
-        role: "function",
-        name: functionName,
-        content: JSON.stringify(functionResult),
-      });
-
-      const returnData = new Response(JSON.stringify({ ...functionResult }), {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      // console.log(returnData);
-      return returnData;
+    if (!atomaResponse.ok) {
+      throw new Error(`Atoma API request failed: ${atomaResponse.statusText}`);
     }
 
+    const atomaResult = await atomaResponse.json();
+    const chatResponse = atomaResult.message;
+
+    // 2. Generate an optimized image prompt from the chat response
+    const promptGeneratorPersonality = {
+      role: "system",
+      content:
+        "You are an expert at creating detailed image generation prompts. Convert the given text into a vivid, descriptive prompt suitable for DALL-E. Focus on visual elements, style, mood, lighting, and composition. Keep the prompt clear and specific, using keywords that work well with image generation. Format: high-quality, detailed description in 1-2 sentences.",
+    };
+    const promptResponse = await fetch(`${site_url}/api/atoma`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          promptGeneratorPersonality,
+          {
+            role: "user",
+            content: `Convert this text into an image generation prompt: ${chatResponse.content}`,
+          },
+        ],
+      }),
+    });
+
+    if (!promptResponse.ok) {
+      throw new Error(`Prompt generation failed: ${promptResponse.statusText}`);
+    }
+
+    const promptResult = await promptResponse.json();
+    const imagePrompt = promptResult.message.content;
+
+    // 3. Generate image using the optimized prompt
+    const imageResponse = await fetch(`${site_url}/api/openai-image`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [{ content: imagePrompt }],
+      }),
+    });
+
+    if (!imageResponse.ok) {
+      throw new Error(`Image API request failed: ${imageResponse.statusText}`);
+    }
+
+    const imageResult = await imageResponse.json();
+
+    // 4. Return both the chat response and image
     return new Response(
       JSON.stringify({
-        message: responseMessage,
+        message: chatResponse,
+        imageUrl: imageResult.imageUrl,
       }),
       {
         headers: {

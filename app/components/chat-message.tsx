@@ -15,6 +15,7 @@ interface Message {
   content: string;
   id: string;
   isImage?: boolean;
+  blobId?: string | null;
 }
 
 export function ChatMessage({ message }: { message: Message }) {
@@ -56,6 +57,22 @@ export function ChatMessage({ message }: { message: Message }) {
 
       if (newBlobId) {
         setBlobId(newBlobId);
+        message.blobId = newBlobId;
+        const conversations = JSON.parse(
+          localStorage.getItem("conversations") || "[]"
+        );
+        const updatedConversations = conversations.map((conv: any) => ({
+          ...conv,
+          messages: conv.messages.map((msg: any) =>
+            msg.id === message.id
+              ? { ...msg, content: newBlobId, blobId: newBlobId }
+              : msg
+          ),
+        }));
+        localStorage.setItem(
+          "conversations",
+          JSON.stringify(updatedConversations)
+        );
         toast({
           title: "Upload successful!",
           description: (

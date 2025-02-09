@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useChat } from "ai/react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageInput } from "./message-input";
 import { ChatMessage } from "./chat-message";
@@ -17,7 +16,11 @@ import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 
 type Conversation = {
   id: string;
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: {
+    role: "user" | "assistant";
+    content: string;
+    isImage?: boolean;
+  }[];
 };
 
 type ChatInterfaceProps = {
@@ -241,30 +244,41 @@ export function ChatInterface({
       setInput("");
 
       try {
-        const response = await fetch("/api/openai-image", {
+        const response = await fetch("/api/chat", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            messages: updatedMessages.map((msg) => ({
-              role: msg.role,
-              content: msg.content,
-            })),
+            messages: updatedMessages
+              .filter((msg) => !msg.isImage) // Filter out messages marked as images
+              .map((msg) => ({
+                role: msg.role,
+                content: msg.content,
+              })),
           }),
         });
 
         if (!response.ok) throw new Error("Failed to fetch response");
         const data = await response.json();
 
-        const assistantMessage = {
+        // Add image message first
+        const imageMessage = {
           role: "assistant" as const,
           content: data.imageUrl,
           id: crypto.randomUUID(),
           isImage: true,
         };
 
-        const newMessages = [...updatedMessages, assistantMessage];
+        // Then add text message
+        const textMessage = {
+          role: "assistant" as const,
+          content: data.message.content,
+          id: crypto.randomUUID(),
+          isImage: false,
+        };
+
+        const newMessages = [...updatedMessages, imageMessage, textMessage];
         setMessages(newMessages);
         updateConversation(
           conversationId,
