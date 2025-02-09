@@ -21,19 +21,22 @@ export async function POST(req: Request) {
       size: "1024x1024", // available sizes: 1024x1024, 512x512, 256x256
     });
 
-    return new Response(
-      JSON.stringify({
-        message: {
-          role: "assistant",
-          content: response.data[0].url,
-        },
-      }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    // Fetch the image and convert to blob
+    const imageUrl = response.data[0].url;
+    if (!imageUrl) throw new Error("No image URL received");
+    const imageResponse = await fetch(imageUrl);
+    const imageBlob = await imageResponse.blob();
+
+    // Convert blob to base64 data URL
+    const arrayBuffer = await imageBlob.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    const dataUrl = `data:${imageBlob.type};base64,${base64}`;
+
+    return new Response(JSON.stringify({ imageUrl: dataUrl }), {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   } catch (error) {
     console.error("API Error:", error);
     return new Response(

@@ -241,7 +241,6 @@ export function ChatInterface({
       setInput("");
 
       try {
-        // Change API endpoint to image generation
         const response = await fetch("/api/openai-image", {
           method: "POST",
           headers: {
@@ -260,9 +259,9 @@ export function ChatInterface({
 
         const assistantMessage = {
           role: "assistant" as const,
-          content: data.message.content, // This will now be the image URL
+          content: data.imageUrl,
           id: crypto.randomUUID(),
-          isImage: true, // Add this flag to identify image messages
+          isImage: true,
         };
 
         const newMessages = [...updatedMessages, assistantMessage];
