@@ -54,17 +54,35 @@ export default function Home() {
     let updatedConversations;
 
     if (existingConversation) {
-      // Update existing conversation
       updatedConversations = conversations.map((conv) =>
         conv.id === id ? { ...conv, messages } : conv
       );
     } else {
-      // Add new conversation
       updatedConversations = [...conversations, { id, messages }];
     }
 
     setConversations(updatedConversations);
-    localStorage.setItem("conversations", JSON.stringify(updatedConversations));
+    try {
+      localStorage.setItem(
+        "conversations",
+        JSON.stringify(updatedConversations)
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === "QuotaExceededError") {
+        // Handle the storage quota error
+        console.warn("Storage quota exceeded. Removing oldest conversations.");
+
+        // Remove the oldest conversations until storage is available
+        const reducedConversations = [...updatedConversations].slice(-5); // Keep only last 5 conversations
+        setConversations(reducedConversations);
+        localStorage.setItem(
+          "conversations",
+          JSON.stringify(reducedConversations)
+        );
+      } else {
+        console.error("Failed to save conversations:", error);
+      }
+    }
   };
 
   const addNewConversation = () => {
