@@ -113,7 +113,7 @@ export function ChatMessage({ message }: { message: Message }) {
               alt="AI generated image"
               className="max-w-full h-auto rounded-lg"
             />
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
@@ -132,9 +132,22 @@ export function ChatMessage({ message }: { message: Message }) {
                     )}
                   </button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="left" sideOffset={5}>
                   {blobId ? (
-                    <p>Blob ID: {blobId}</p>
+                    <div
+                      className="flex items-center gap-2 cursor-pointer"
+                      onClick={() => {
+                        navigator.clipboard.writeText(blobId);
+                        toast({
+                          title: "Copied to clipboard",
+                          description:
+                            "Blob ID has been copied to your clipboard",
+                        });
+                      }}
+                    >
+                      <span>Blob ID: {blobId}</span>
+                      <Copy className="h-4 w-4" />
+                    </div>
                   ) : (
                     <p>Upload image to Walrus</p>
                   )}
