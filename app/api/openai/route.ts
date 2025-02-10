@@ -1,16 +1,4 @@
 import OpenAI from "openai";
-import { Transaction } from "@mysten/sui/transactions";
-
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-
-import { SuiClient } from "@mysten/sui/client";
-import {
-  generateNonce,
-  generateRandomness,
-  jwtToAddress,
-  genAddressSeed,
-  getZkLoginSignature,
-} from "@mysten/sui/zklogin";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

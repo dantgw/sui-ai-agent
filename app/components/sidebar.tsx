@@ -1,10 +1,8 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, MessageCircle, User } from "lucide-react";
-import { AccountButton } from "./account-button";
-import { NFTDialog } from "./nft-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { MessageCircle, PlusCircle } from "lucide-react";
 import { useState } from "react";
+import { AccountButton } from "./account-button";
 
 type Conversation = {
   id: string;

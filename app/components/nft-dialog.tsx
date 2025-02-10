@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,20 +8,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Transaction } from "@mysten/sui/transactions";
-import { MINT_AI_PACKAGE_ADDRESS } from "@/lib/constants";
-import { SuiClient } from "@mysten/sui/client";
-import {
-  genAddressSeed,
-  getZkLoginSignature,
-  getExtendedEphemeralPublicKey,
-} from "@mysten/sui/zklogin";
-import { PartialZkLoginSignature } from "@/lib/types";
+import { toast } from "@/hooks/use-toast";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-import { toast } from "@/hooks/use-toast";
+import { getExtendedEphemeralPublicKey } from "@mysten/sui/zklogin";
+import { useState } from "react";
 
 interface NFTDialogProps {
   isOpen: boolean;

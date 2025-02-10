@@ -1,7 +1,7 @@
-import { useState, useRef, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { PaperclipIcon, SendIcon, SmileIcon, X } from "lucide-react";
+import { SendIcon, X } from "lucide-react";
+import { useRef, useState, type KeyboardEvent } from "react";
 
 type MessageInputProps = {
   input: string;

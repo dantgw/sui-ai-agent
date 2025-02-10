@@ -1,15 +1,4 @@
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, MessageCircle, User } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-import { SuiClient } from "@mysten/sui/client";
-import {
-  generateNonce,
-  generateRandomness,
-  jwtToAddress,
-} from "@mysten/sui/zklogin";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,15 +6,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Settings, UserCircle, Copy } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { truncateAddress } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { truncateAddress } from "@/lib/utils";
+import { SuiClient } from "@mysten/sui/client";
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import {
+  generateNonce,
+  generateRandomness,
+  jwtToAddress,
+} from "@mysten/sui/zklogin";
+import { Copy, LogOut, UserCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function AccountButton() {
   const router = useRouter();
   const [address, setAddress] = useState<string | null>(null);
-  const searchParams = useSearchParams();
   const { toast } = useToast();
 
   const handleLogin = async () => {

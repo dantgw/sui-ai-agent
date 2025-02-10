@@ -1,5 +1,5 @@
-import { AtomaSDKCore } from "atoma-sdk/core";
 import { ATOMA_MODEL } from "@/lib/constants";
+import { AtomaSDKCore } from "atoma-sdk/core";
 
 const atomaSDK = new AtomaSDKCore({
   bearerAuth: process.env.ATOMA_API_KEY ?? "",

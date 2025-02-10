@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageInput } from "./message-input";
-import { ChatMessage } from "./chat-message";
-import { Transaction } from "@mysten/sui/transactions";
-import { Ed25519Keypair, Ed25519PublicKey } from "@mysten/sui/keypairs/ed25519";
 import { SuiClient } from "@mysten/sui/client";
+import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
+import { Transaction } from "@mysten/sui/transactions";
+import { useEffect, useRef, useState } from "react";
+import { ChatMessage } from "./chat-message";
+import { MessageInput } from "./message-input";
 
-import {
-  genAddressSeed,
-  getZkLoginSignature,
-  getExtendedEphemeralPublicKey,
-} from "@mysten/sui/zklogin";
 import { PartialZkLoginSignature } from "@/lib/types";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
+import {
+  genAddressSeed,
+  getExtendedEphemeralPublicKey,
+  getZkLoginSignature,
+} from "@mysten/sui/zklogin";
 
 type Conversation = {
   id: string;

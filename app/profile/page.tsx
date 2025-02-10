@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { SuiClient, getFullnodeUrl } from "@mysten/sui/client";
 import { MIST_PER_SUI } from "@mysten/sui/utils";
-import { ArrowLeft, Copy, Check } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Check, Copy } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Profile() {
   const [address, setAddress] = useState<string>("");

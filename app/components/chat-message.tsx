@@ -1,27 +1,16 @@
+import { NFTDialog } from "@/app/components/nft-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
-import { Upload, Copy, Loader2, MoreVertical } from "lucide-react";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { NFTDialog } from "@/app/components/nft-dialog";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { Copy, Loader2, MoreVertical, Upload } from "lucide-react";
+import { useState } from "react";
 
 interface Message {
   role: "user" | "assistant";
