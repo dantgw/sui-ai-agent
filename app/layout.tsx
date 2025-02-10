@@ -1,14 +1,14 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import type React from "react"; // Added import for React
 import { Toaster } from "@/components/ui/toaster";
+import { Inter } from "next/font/google";
+import type React from "react"; // Added import for React
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "ChatGPT UI",
-  description: "A ChatGPT-like UI with image and video upload",
+  title: "MintAI",
+  description: "Chat with AI and mint generated images on the SUI blockchain",
 };
 
 export default function RootLayout({
