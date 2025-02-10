@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, MessageCircle, User } from "lucide-react";
 import { AccountButton } from "./account-button";
+import { NFTDialog } from "./nft-dialog";
+import { useState } from "react";
 
 type Conversation = {
   id: string;
@@ -24,6 +26,8 @@ export function Sidebar({
   onNewConversation,
   onDeleteConversation,
 }: SidebarProps) {
+  const [isNFTDialogOpen, setIsNFTDialogOpen] = useState(false);
+
   return (
     <div className="w-64 border-r bg-background flex flex-col">
       <div className="p-4">

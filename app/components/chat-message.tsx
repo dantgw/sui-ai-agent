@@ -140,9 +140,9 @@ export function ChatMessage({ message }: { message: Message }) {
           <Copy className="h-4 w-4 mr-2" />
           Copy Blob ID
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setIsNFTDialogOpen(true)}>
+        {/* <DropdownMenuItem onClick={() => setIsNFTDialogOpen(true)}>
           Create NFT
-        </DropdownMenuItem>
+        </DropdownMenuItem> */}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -194,12 +194,12 @@ export function ChatMessage({ message }: { message: Message }) {
         ) : (
           <div className="mt-1 p-4">{message.content}</div>
         )}
+        <NFTDialog
+          isOpen={isNFTDialogOpen}
+          onOpenChange={setIsNFTDialogOpen}
+          blobId={blobId}
+        />
       </Card>
-      <NFTDialog
-        isOpen={isNFTDialogOpen}
-        onOpenChange={setIsNFTDialogOpen}
-        blobId={blobId}
-      />
     </div>
   );
 }

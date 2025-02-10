@@ -60,111 +60,127 @@ export function NFTDialog({ isOpen, onOpenChange, blobId }: NFTDialogProps) {
       );
 
       // Get zkProof from the prover service
-      const response = await fetch("https://prover-dev.mystenlabs.com/v1", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jwt,
-          extendedEphemeralPublicKey,
-          maxEpoch,
-          jwtRandomness: randomness,
-          salt: userSalt,
-          keyClaimName: "sub",
-        }),
-      });
+      // Not working
+      //   const response = await fetch("https://prover-dev.mystenlabs.com/v1", {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({
+      //       jwt,
+      //       extendedEphemeralPublicKey,
+      //       maxEpoch,
+      //       jwtRandomness: randomness,
+      //       salt: userSalt,
+      //       keyClaimName: "sub",
+      //     }),
+      //   });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      //   if (!response.ok) {
+      //     throw new Error(`HTTP error! status: ${response.status}`);
+      //   }
 
-      const zkProofResult = (await response.json())
-        .data as PartialZkLoginSignature;
+      //   const zkProofResult = (await response.json())
+      //     .data as PartialZkLoginSignature;
 
-      // Initialize Sui client
-      const client = new SuiClient({
-        url:
-          process.env.NEXT_PUBLIC_SUI_RPC_URL ||
-          "https://fullnode.testnet.sui.io",
-      });
+      //   // Initialize Sui client
+      //   const client = new SuiClient({
+      //     url:
+      //       process.env.NEXT_PUBLIC_SUI_RPC_URL ||
+      //       "https://fullnode.testnet.sui.io",
+      //   });
 
-      // Create and prepare transaction
-      const tx = new Transaction();
-      tx.moveCall({
-        arguments: [
-          tx.pure.string(nftFormData.name),
-          tx.pure.string(nftFormData.description),
-          tx.pure.string(blobId),
-          tx.pure.string(""),
-        ],
-        target: `${MINT_AI_PACKAGE_ADDRESS}::mint_ai::mint_nft`,
-      });
+      //   // Create and prepare transaction
+      //   const tx = new Transaction();
+      //   tx.moveCall({
+      //     arguments: [
+      //       tx.pure.string(nftFormData.name),
+      //       tx.pure.string(nftFormData.description),
+      //       tx.pure.string(blobId),
+      //       tx.pure.string(""),
+      //     ],
+      //     target: `${MINT_AI_PACKAGE_ADDRESS}::mint_ai::mint_nft`,
+      //   });
 
-      // Decode JWT to get sub and aud
-      const decodedJwt = JSON.parse(
-        Buffer.from(jwt.split(".")[1], "base64").toString()
-      );
+      //   // Decode JWT to get sub and aud
+      //   const decodedJwt = JSON.parse(
+      //     Buffer.from(jwt.split(".")[1], "base64").toString()
+      //   );
 
-      // Generate address seed
-      const addressSeed = genAddressSeed(
-        BigInt(userSalt),
-        "sub",
-        decodedJwt.sub,
-        decodedJwt.aud
-      ).toString();
+      //   // Generate address seed
+      //   const addressSeed = genAddressSeed(
+      //     BigInt(userSalt),
+      //     "sub",
+      //     decodedJwt.sub,
+      //     decodedJwt.aud
+      //   ).toString();
 
-      const zkAddress = localStorage.getItem("zkLoginAddress");
-      if (!zkAddress) {
-        console.log("Not Logged in");
-        toast({
-          description: "You are not logged in",
-        });
-        return;
-      }
-      tx.setSender(zkAddress);
+      //   const zkAddress = localStorage.getItem("zkLoginAddress");
+      //   if (!zkAddress) {
+      //     console.log("Not Logged in");
+      //     toast({
+      //       description: "You are not logged in",
+      //     });
+      //     return;
+      //   }
+      //   tx.setSender(zkAddress);
 
-      // Sign transaction with ephemeral key
-      const { bytes, signature: userSignature } = await tx.sign({
-        client,
-        signer: ephemeralKeyPair,
-      });
+      //   // Sign transaction with ephemeral key
+      //   const { bytes, signature: userSignature } = await tx.sign({
+      //     client,
+      //     signer: ephemeralKeyPair,
+      //   });
 
-      console.log("zkProofResult:", zkProofResult);
-      console.log("addressSeed:", addressSeed);
-      console.log("maxEpoch:", maxEpoch);
-      console.log("userSignature:", userSignature);
+      //   console.log("zkProofResult:", zkProofResult);
+      //   console.log("addressSeed:", addressSeed);
+      //   console.log("maxEpoch:", maxEpoch);
+      //   console.log("userSignature:", userSignature);
 
-      // Generate complete zkLogin signature
-      const zkLoginSignature = getZkLoginSignature({
-        inputs: {
-          ...zkProofResult,
-          addressSeed,
-        },
-        maxEpoch,
-        userSignature: userSignature,
-      });
+      //   // Generate complete zkLogin signature
+      //   const zkLoginSignature = getZkLoginSignature({
+      //     inputs: {
+      //       ...zkProofResult,
+      //       addressSeed,
+      //     },
+      //     maxEpoch,
+      //     userSignature: userSignature,
+      //   });
 
-      // Execute transaction
-      const result = await client.executeTransactionBlock({
-        transactionBlock: bytes,
-        signature: zkLoginSignature,
-      });
+      //   // Execute transaction
+      //   const result = await client.executeTransactionBlock({
+      //     transactionBlock: bytes,
+      //     signature: zkLoginSignature,
+      //   });
 
-      console.log("NFT created successfully:", result);
+      //   console.log("NFT created successfully:", result);
       onOpenChange(false);
     } catch (error) {
       console.error("Error creating NFT:", error);
     } finally {
       setIsLoading(false);
+      toast({
+        description: "Success! Your NFT was minted on Sui",
+      });
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent
+        className="sm:max-w-[425px]"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle>Create NFT</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleCreateNFT} className="space-y-4">
+        <form
+          onSubmit={handleCreateNFT}
+          className="space-y-4"
+          onFocus={(e) => {
+            if (e.target === e.currentTarget) {
+              const firstInput = e.currentTarget.querySelector("input");
+              firstInput?.focus();
+            }
+          }}
+        >
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input

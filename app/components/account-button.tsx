@@ -163,9 +163,12 @@ export function AccountButton() {
           </DropdownMenu>
         </div>
       ) : (
-        <Button variant="default" size="sm" onClick={handleLogin}>
-          Login with Google
-        </Button>
+        <span
+          className="bg-transparent border-none outline-none shadow-none hover:bg-none cursor-pointer"
+          onClick={handleLogin}
+        >
+          <img src="/google-light.svg" alt="Google" className="w-full" />
+        </span>
       )}
     </div>
   );
