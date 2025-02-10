@@ -1,14 +1,27 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { useState } from "react";
-import { Upload, Info, Copy, Loader2 } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Upload, Copy, Loader2, MoreVertical } from "lucide-react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { NFTDialog } from "@/app/components/nft-dialog";
 
 interface Message {
   role: "user" | "assistant";
@@ -23,6 +36,7 @@ export function ChatMessage({ message }: { message: Message }) {
   const [blobId, setBlobId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const [isNFTDialogOpen, setIsNFTDialogOpen] = useState(false);
 
   const uploadToWalrus = async (imageData: string) => {
     setIsUploading(true);
@@ -106,6 +120,33 @@ export function ChatMessage({ message }: { message: Message }) {
     }
   };
 
+  const dropdownButton = blobId && (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+          <MoreVertical className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem
+          onClick={() => {
+            navigator.clipboard.writeText(blobId);
+            toast({
+              title: "Copied to clipboard",
+              description: "Blob ID has been copied to your clipboard",
+            });
+          }}
+        >
+          <Copy className="h-4 w-4 mr-2" />
+          Copy Blob ID
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setIsNFTDialogOpen(true)}>
+          Create NFT
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <div
       className={`flex items-start space-x-2 mb-4 ${
@@ -131,51 +172,34 @@ export function ChatMessage({ message }: { message: Message }) {
               className="max-w-full h-auto rounded-lg"
             />
             <TooltipProvider delayDuration={0}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() =>
-                      !blobId && !isUploading && uploadToWalrus(message.content)
-                    }
-                    className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    disabled={isUploading}
-                  >
-                    {blobId ? (
-                      <Info className="h-4 w-4" />
-                    ) : isUploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left" sideOffset={5}>
-                  {blobId ? (
-                    <div
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => {
-                        navigator.clipboard.writeText(blobId);
-                        toast({
-                          title: "Copied to clipboard",
-                          description:
-                            "Blob ID has been copied to your clipboard",
-                        });
-                      }}
-                    >
-                      <span>Blob ID: {blobId}</span>
-                      <Copy className="h-4 w-4" />
-                    </div>
-                  ) : (
-                    <p>Upload image to Walrus</p>
-                  )}
-                </TooltipContent>
-              </Tooltip>
+              {blobId ? (
+                dropdownButton
+              ) : isUploading ? (
+                <button
+                  className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  disabled
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => uploadToWalrus(message.content)}
+                  className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Upload className="h-4 w-4" />
+                </button>
+              )}
             </TooltipProvider>
           </div>
         ) : (
           <div className="mt-1 p-4">{message.content}</div>
         )}
       </Card>
+      <NFTDialog
+        isOpen={isNFTDialogOpen}
+        onOpenChange={setIsNFTDialogOpen}
+        blobId={blobId}
+      />
     </div>
   );
 }
