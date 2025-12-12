@@ -1,3 +1,4 @@
+"use client";
 import { NFTDialog } from "@/app/components/nft-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -41,11 +42,13 @@ export function ChatMessage({ message }: { message: Message }) {
       const response = await fetch(imageData);
       const blob = await response.blob();
 
-      const address = sessionStorage.getItem("zkLoginAddress");
+      const address = localStorage.getItem("zkLoginAddress");
       let walrusUrl = `${PUBLISHER}/v1/blobs`;
       if (address) {
         walrusUrl = `${PUBLISHER}/v1/blobs?send_object_to=${address}`;
       }
+
+      console.log("walrusUrl", walrusUrl);
       const walrusResponse = await fetch(walrusUrl, {
         method: "PUT",
         body: blob,
